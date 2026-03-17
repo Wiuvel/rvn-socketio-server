@@ -30,9 +30,17 @@ export interface SocketData {
 
 // --- WebSocket Events ---
 
+export interface AckResponse {
+  ok: boolean;
+  error?: string;
+}
+
 export interface WebSocketEvents {
   // Client -> Server
-  'support:join': (data: { ticketId: string }) => void;
+  'support:join': (
+    data: { ticketId: string },
+    ack: (response: AckResponse) => void,
+  ) => void;
   'support:leave': (data: { ticketId: string }) => void;
   'support:typing': (data: { ticketId: string; isTyping: boolean }) => void;
 

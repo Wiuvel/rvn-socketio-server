@@ -26,16 +26,28 @@ const corsOrigin =
       ? true
       : false;
 
+const MAX_CLIENTS = Number(process.env.MAX_CLIENTS) || 0;
+
 const engine = new Engine({
   path: '/socket.io/',
   pingTimeout: 20000,
   pingInterval: 25000,
+  maxClients: MAX_CLIENTS,
+  rateLimit: {
+    maxMessages: 100,
+    windowMs: 1000,
+  },
+  degradationThreshold: MAX_CLIENTS > 0 ? 0.85 : 0,
   cors: {
     origin: corsOrigin,
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   },
+});
+
+engine.on('degradation', ({ active, clients }) => {
+  console.warn(`[ws] Degradation ${active ? 'ON' : 'OFF'} at ${clients} clients`);
 });
 
 // --- Socket.IO bound to native engine ---
@@ -132,7 +144,12 @@ export default {
     // Health check
     if (req.method === 'GET' && url.pathname === '/health') {
       return new Response(
-        JSON.stringify({ status: 'ok', connections: engine.clientsCount }),
+        JSON.stringify({
+          status: 'ok',
+          connections: engine.clientsCount,
+          degraded: engine.degraded,
+          metrics: engine.metrics,
+        }),
         { headers: { 'Content-Type': 'application/json' } },
       );
     }

@@ -3,7 +3,7 @@
  */
 
 import type { Socket } from 'socket.io';
-import type { WebSocketEvents, SocketData } from '../types';
+import type { WebSocketEvents, SocketData, AckResponse } from '../types';
 import { verifyTicketAccess } from '../auth';
 import { checkTypingRateLimit, cleanupSocketRateLimits } from '../rate-limit';
 import { isValidUUID } from '../utils';
@@ -13,7 +13,7 @@ export function registerSupportHandlers(
 ): void {
   const { userId, isSupport, user } = socket.data;
 
-  socket.on('support:join', async (data, ack) => {
+  socket.on('support:join', async (data: { ticketId: string }, ack: (response: AckResponse) => void) => {
     const { ticketId } = data;
     if (!ticketId || !isValidUUID(ticketId)) {
       socket.emit('support:error', { message: 'Invalid ticket ID', code: 'INVALID_TICKET_ID' });
