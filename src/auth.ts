@@ -1,5 +1,10 @@
 /**
- * Authentication via HTTP callback to rvn-web with in-memory cache
+ * Authentication via HTTP callback to rvn-web.
+ *
+ * Token verification and ticket access checks are cached in-memory
+ * with TTL-based expiration and bounded map sizes.
+ *
+ * @module auth
  */
 
 import type { AuthUser, VerifyTokenResponse, VerifyTicketAccessResponse } from './types';
@@ -7,17 +12,17 @@ import type { AuthUser, VerifyTokenResponse, VerifyTicketAccessResponse } from '
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || '';
 
-// Cache: tokenHash -> { user, expires }
+/** Token verification cache: SHA-256 hash -> { user, expiry }. */
 const tokenCache = new Map<string, { user: AuthUser; expires: number }>();
-const TOKEN_CACHE_TTL = 60_000; // 60 seconds
-const MAX_TOKEN_CACHE_SIZE = 10_000;
+/** @internal */ const TOKEN_CACHE_TTL = 60_000;
+/** @internal */ const MAX_TOKEN_CACHE_SIZE = 10_000;
 
-// Cache: ticketAccess -> { allowed, expires }
+/** Ticket access cache: "ticketId:userId" -> { allowed, expiry }. */
 const ticketAccessCache = new Map<string, { allowed: boolean; expires: number }>();
-const TICKET_ACCESS_CACHE_TTL = 30_000; // 30 seconds
-const MAX_TICKET_CACHE_SIZE = 10_000;
+/** @internal */ const TICKET_ACCESS_CACHE_TTL = 30_000;
+/** @internal */ const MAX_TICKET_CACHE_SIZE = 10_000;
 
-// Cleanup interval
+/** Periodic cache eviction (every 5 minutes). */
 setInterval(() => {
   const now = Date.now();
   for (const [key, val] of tokenCache.entries()) {
@@ -28,6 +33,10 @@ setInterval(() => {
   }
 }, 5 * 60_000);
 
+/**
+ * Computes a SHA-256 hex digest of the given token.
+ * Used as cache key to avoid storing raw tokens in memory.
+ */
 async function hashToken(token: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(token);
@@ -37,6 +46,7 @@ async function hashToken(token: string): Promise<string> {
     .join('');
 }
 
+/** Parameters for the token verification callback. */
 export interface VerifyTokenParams {
   token: string;
   sessionId: string;
@@ -46,13 +56,17 @@ export interface VerifyTokenParams {
 }
 
 /**
- * Verify a user token by calling rvn-web internal API.
- * Results are cached by token hash for TOKEN_CACHE_TTL.
+ * Verifies a user token by calling the rvn-web internal API.
+ *
+ * Successful results are cached by token hash for {@link TOKEN_CACHE_TTL}.
+ * Cache is bounded to {@link MAX_TOKEN_CACHE_SIZE} entries (FIFO eviction).
+ *
+ * @param params - Token and session context
+ * @returns Authenticated user or `null` on failure
  */
 export async function verifyToken(params: VerifyTokenParams): Promise<AuthUser | null> {
   const tokenHash = await hashToken(params.token);
 
-  // Check cache
   const cached = tokenCache.get(tokenHash);
   if (cached && Date.now() < cached.expires) {
     return cached.user;
@@ -74,7 +88,6 @@ export async function verifyToken(params: VerifyTokenParams): Promise<AuthUser |
     const data = (await res.json()) as VerifyTokenResponse;
     if (!data.valid || !data.user) return null;
 
-    // Cache successful result, evict oldest if at capacity
     if (tokenCache.size >= MAX_TOKEN_CACHE_SIZE) {
       const firstKey = tokenCache.keys().next().value;
       if (firstKey) tokenCache.delete(firstKey);
@@ -88,15 +101,21 @@ export async function verifyToken(params: VerifyTokenParams): Promise<AuthUser |
 }
 
 /**
- * Verify ticket access by calling rvn-web internal API.
- * Results are cached for TICKET_ACCESS_CACHE_TTL.
+ * Verifies whether a user has access to a specific support ticket.
+ *
+ * Support users bypass the check entirely. Results are cached for
+ * {@link TICKET_ACCESS_CACHE_TTL}.
+ *
+ * @param ticketId  - Ticket to check access for
+ * @param userId    - User requesting access
+ * @param isSupport - Whether the user has the support role
+ * @returns `true` if access is allowed
  */
 export async function verifyTicketAccess(
   ticketId: string,
   userId: string,
   isSupport: boolean,
 ): Promise<boolean> {
-  // Support can access any ticket
   if (isSupport) return true;
 
   const cacheKey = `${ticketId}:${userId}`;
@@ -134,7 +153,10 @@ export async function verifyTicketAccess(
   }
 }
 
-/** Invalidate token cache for a specific user (on disconnect) */
+/**
+ * Removes all cached token entries for the given user.
+ * Call on disconnect to prevent stale sessions from being served from cache.
+ */
 export function invalidateUserCache(userId: string): void {
   for (const [key, val] of tokenCache.entries()) {
     if (val.user.id === userId) tokenCache.delete(key);

@@ -1,40 +1,62 @@
 /**
- * Shared types for WebSocket server
+ * Shared type definitions for the WebSocket server.
+ *
+ * Covers authentication, socket data, Socket.IO event contracts,
+ * domain models, and internal broadcast payloads.
+ *
+ * @module types
  */
 
-// --- Auth ---
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
 
+/** Authenticated user identity attached to each socket. */
 export interface AuthUser {
   id: string;
   username: string;
   isSupport: boolean;
 }
 
+/** Response shape from the rvn-web token verification endpoint. */
 export interface VerifyTokenResponse {
   valid: boolean;
   user?: AuthUser;
   error?: string;
 }
 
+/** Response shape from the rvn-web ticket access verification endpoint. */
 export interface VerifyTicketAccessResponse {
   allowed: boolean;
 }
 
-// --- Socket Data ---
+// ---------------------------------------------------------------------------
+// Socket Data
+// ---------------------------------------------------------------------------
 
+/** Per-socket data populated by the auth middleware. */
 export interface SocketData {
   user: AuthUser;
   userId: string;
   isSupport: boolean;
 }
 
-// --- WebSocket Events ---
+// ---------------------------------------------------------------------------
+// WebSocket Events
+// ---------------------------------------------------------------------------
 
+/** Acknowledgement callback response for client-initiated events. */
 export interface AckResponse {
   ok: boolean;
   error?: string;
 }
 
+/**
+ * Bidirectional Socket.IO event map.
+ *
+ * Client-to-server events use acknowledgement callbacks where needed.
+ * Server-to-client events carry typed payloads for each domain.
+ */
 export interface WebSocketEvents {
   // Client -> Server
   'support:join': (data: { ticketId: string }, ack: (response: AckResponse) => void) => void;
@@ -71,8 +93,11 @@ export interface WebSocketEvents {
   'system:notification': (data: BroadcastSystemPayload) => void;
 }
 
-// --- Data Shapes ---
+// ---------------------------------------------------------------------------
+// Domain Models
+// ---------------------------------------------------------------------------
 
+/** Public user profile (used in messages, comments, assignments). */
 export interface UserProfile {
   id: string;
   username: string;
@@ -80,6 +105,7 @@ export interface UserProfile {
   avatar?: string | null;
 }
 
+/** Support ticket message with optional attachments. */
 export interface SupportMessage {
   id: string;
   ticket_id: string;
@@ -99,6 +125,7 @@ export interface SupportMessage {
   }>;
 }
 
+/** Ticket status update payload. */
 export interface TicketUpdate {
   id: string;
   status: 'open' | 'closed' | 'pending';
@@ -107,6 +134,7 @@ export interface TicketUpdate {
   closed_at?: string | null;
 }
 
+/** User profile comment with optional threading. */
 export interface ProfileComment {
   id: string;
   profile_id: string;
@@ -118,35 +146,43 @@ export interface ProfileComment {
   author: UserProfile;
 }
 
-// --- Broadcast Payloads (REST API from rvn-web) ---
+// ---------------------------------------------------------------------------
+// Broadcast Payloads (REST API from rvn-web)
+// ---------------------------------------------------------------------------
 
+/** Payload for `POST /broadcast/support/message`. */
 export interface BroadcastMessagePayload {
   ticketId: string;
   message: SupportMessage;
 }
 
+/** Payload for `POST /broadcast/support/ticket-update`. */
 export interface BroadcastTicketUpdatePayload {
   ticketId: string;
   ticket: TicketUpdate;
 }
 
+/** Payload for `POST /broadcast/support/ticket-assigned`. */
 export interface BroadcastTicketAssignedPayload {
   ticketId: string;
   assignedTo: string | null;
   assignedUser: UserProfile | null;
 }
 
+/** Payload for `POST /broadcast/support/message-read`. */
 export interface BroadcastMessageReadPayload {
   ticketId: string;
   messageIds: string[];
   readBy: 'user' | 'support';
 }
 
+/** Payload for `POST /broadcast/profile/comment`. */
 export interface BroadcastCommentPayload {
   profileId: string;
   comment: ProfileComment;
 }
 
+/** Payload for `POST /broadcast/system`. */
 export interface BroadcastSystemPayload {
   message: string;
   type?: 'info' | 'warning' | 'error';

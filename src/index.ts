@@ -1,6 +1,10 @@
 /**
- * Standalone Socket.IO server (Bun runtime)
- * Uses @rvncom/socket-bun-engine for native Bun WebSocket support
+ * Standalone Socket.IO server entry point.
+ *
+ * Binds Socket.IO to {@link @rvncom/socket-bun-engine} for native Bun WebSocket support.
+ * Exposes REST endpoints for health checks and internal broadcast API.
+ *
+ * @module index
  */
 
 import { Server as Engine } from '@rvncom/socket-bun-engine';
@@ -18,7 +22,6 @@ const CORS_ORIGINS = process.env.CORS_ORIGINS?.split(',')
   .map((s) => s.trim())
   .filter(Boolean);
 
-// --- Engine.IO (Bun native) ---
 const corsOrigin =
   CORS_ORIGINS && CORS_ORIGINS.length > 0
     ? CORS_ORIGINS
@@ -28,6 +31,7 @@ const corsOrigin =
 
 const MAX_CLIENTS = Number(process.env.MAX_CLIENTS) || 0;
 
+/** Engine.IO server with native Bun WebSocket transport. */
 const engine = new Engine({
   path: '/socket.io/',
   pingTimeout: 20000,
@@ -58,7 +62,7 @@ engine.on('connection', (socket) => {
   });
 });
 
-// --- Socket.IO bound to native engine ---
+/** Socket.IO server bound to the native engine. */
 const io = new SocketIOServer<
   WebSocketEvents,
   WebSocketEvents,
@@ -67,7 +71,13 @@ const io = new SocketIOServer<
 >();
 io.bind(engine);
 
-// --- Auth middleware ---
+/**
+ * Authentication middleware.
+ *
+ * Extracts client IP from proxy headers, validates the auth token via
+ * {@link verifyToken}, and populates `socket.data` with the authenticated user.
+ * Failed attempts are tracked by {@link checkConnectionAttempt} for rate limiting.
+ */
 io.use(async (socket, next) => {
   try {
     const clientIP =
@@ -87,7 +97,6 @@ io.use(async (socket, next) => {
       return next(new Error('Authentication required'));
     }
 
-    // Parse cookies for session validation
     const cookieHeader = socket.handshake.headers.cookie;
     const cookies = parseCookies(typeof cookieHeader === 'string' ? cookieHeader : undefined);
     const sessionId = cookies['session_id'] || '';
@@ -125,7 +134,7 @@ io.use(async (socket, next) => {
   }
 });
 
-// --- Connection handler ---
+/** Registers per-socket event handlers on new connection. */
 io.on('connection', (socket) => {
   console.log(`[ws] Connected: ${socket.id} (user: ${socket.data.userId})`);
 
@@ -146,15 +155,17 @@ io.on('connection', (socket) => {
   });
 });
 
-// --- Bun.serve with engine handler + REST routes ---
 const engineHandler = engine.handler();
 
+/**
+ * Bun.serve export — routes requests to health check, broadcast REST API,
+ * or the Engine.IO transport handler.
+ */
 export default {
   port: PORT,
   async fetch(req: Request, bunServer: unknown) {
     const url = new URL(req.url);
 
-    // Health check
     if (req.method === 'GET' && url.pathname === '/health') {
       return new Response(
         JSON.stringify({
@@ -167,18 +178,16 @@ export default {
       );
     }
 
-    // Broadcast REST API
     if (req.method === 'POST' && url.pathname.startsWith('/broadcast/')) {
       return handleBroadcastRequest(req, url.pathname, io, engine);
     }
 
-    // Delegate to engine (Socket.IO transport)
     return engineHandler.fetch(req, bunServer as Parameters<typeof engineHandler.fetch>[1]);
   },
   websocket: engineHandler.websocket,
 };
 
-// --- Graceful shutdown ---
+/** Gracefully shuts down the engine and exits the process. */
 function shutdown() {
   console.log('[ws] Shutting down...');
   engine.shutdown().then(() => {

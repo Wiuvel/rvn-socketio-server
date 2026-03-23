@@ -1,5 +1,11 @@
 /**
- * Support ticket WebSocket handlers
+ * Support ticket WebSocket handlers.
+ *
+ * Handles room join/leave with ticket access verification,
+ * typing indicator broadcasts with rate limiting, and
+ * per-socket cleanup on disconnect.
+ *
+ * @module handlers/support
  */
 
 import type { Socket } from 'socket.io';
@@ -8,6 +14,11 @@ import { verifyTicketAccess } from '../auth';
 import { checkTypingRateLimit, cleanupSocketRateLimits } from '../rate-limit';
 import { isValidUUID } from '../utils';
 
+/**
+ * Registers support-related event handlers on a connected socket.
+ *
+ * @param socket - Authenticated Socket.IO socket with {@link SocketData}
+ */
 export function registerSupportHandlers(
   socket: Socket<WebSocketEvents, WebSocketEvents, Record<string, never>, SocketData>,
 ): void {
