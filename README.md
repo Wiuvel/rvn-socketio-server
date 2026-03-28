@@ -4,9 +4,9 @@
 [![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8-010101?style=flat-square&logo=socket.io&logoColor=white)](https://socket.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange?style=flat-square)](./LICENSE)
-[![Engine](https://img.shields.io/npm/v/@rvncom/socket-bun-engine?style=flat-square&color=blue&label=engine)](https://www.npmjs.com/package/@rvncom/socket-bun-engine)
+[![Engine](https://img.shields.io/npm/v/@rvncom/socketio-bun-engine?style=flat-square&color=blue&label=engine)](https://www.npmjs.com/package/@rvncom/socketio-bun-engine)
 
-Standalone real-time WebSocket server built on [Socket.IO](https://socket.io/) with [Bun](https://bun.sh/) runtime and native Bun WebSocket support via [`@rvncom/socket-bun-engine`](https://www.npmjs.com/package/@rvncom/socket-bun-engine).
+Standalone real-time WebSocket server built on [Socket.IO](https://socket.io/) with [Bun](https://bun.sh/) runtime and native Bun WebSocket support via [`@rvncom/socketio-bun-engine`](https://www.npmjs.com/package/@rvncom/socketio-bun-engine).
 
 ## Features
 

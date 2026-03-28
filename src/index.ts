@@ -1,13 +1,13 @@
 /**
  * Standalone Socket.IO server entry point.
  *
- * Binds Socket.IO to {@link @rvncom/socket-bun-engine} for native Bun WebSocket support.
+ * Binds Socket.IO to {@link @rvncom/socketio-bun-engine} for native Bun WebSocket support.
  * Exposes REST endpoints for health checks and internal broadcast API.
  *
  * @module index
  */
 
-import { Server as Engine } from '@rvncom/socket-bun-engine';
+import { Server as Engine } from '@rvncom/socketio-bun-engine';
 import { Server as SocketIOServer } from 'socket.io';
 import type { WebSocketEvents, SocketData } from './types';
 import { verifyToken, type VerifyTokenParams } from './auth';

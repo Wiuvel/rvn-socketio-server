@@ -8,7 +8,7 @@
  */
 
 import type { Server } from 'socket.io';
-import type { Server as Engine } from '@rvncom/socket-bun-engine';
+import type { Server as Engine } from '@rvncom/socketio-bun-engine';
 import type {
   WebSocketEvents,
   SocketData,
