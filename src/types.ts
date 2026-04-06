@@ -84,12 +84,15 @@ export interface WebSocketEvents {
   }) => void;
   'support:error': (data: { message: string; code?: string }) => void;
 
-  // Profile Comments
+  /* Profile Comments */
   'profile:join': (data: { profileId: string }) => void;
   'profile:leave': (data: { profileId: string }) => void;
   'profile:comment:new': (data: { profileId: string; comment: ProfileComment }) => void;
 
-  // System
+  /* Notifications */
+  'notification:new': (data: { notification: NotificationPayload }) => void;
+
+  /* System */
   'system:notification': (data: BroadcastSystemPayload) => void;
 }
 
@@ -180,6 +183,24 @@ export interface BroadcastMessageReadPayload {
 export interface BroadcastCommentPayload {
   profileId: string;
   comment: ProfileComment;
+}
+
+/** Notification payload for real-time delivery to user rooms. */
+export interface NotificationPayload {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  count: number;
+  related_ticket_id?: string | null;
+  created_at: string;
+}
+
+/** Payload for `POST /broadcast/notification`. */
+export interface BroadcastNotificationPayload {
+  userId: string;
+  notification: NotificationPayload;
 }
 
 /** Payload for `POST /broadcast/system`. */

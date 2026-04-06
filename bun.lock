@@ -5,7 +5,7 @@
     "": {
       "name": "rvn-socket-server",
       "dependencies": {
-        "@rvncom/socketio-bun-engine": "^1.1.1",
+        "@rvncom/socketio-bun-engine": "^1.1.2",
         "socket.io": "^4.8.3",
       },
       "devDependencies": {
@@ -58,7 +58,7 @@
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.57.0", "", { "os": "win32", "cpu": "x64" }, "sha512-6PuxhYgth8TuW0+ABPOIkGdBYw+qYGxgIdXPHSVpiCDm+hqTTWCmC739St1Xni0DJBt8HnSHTG67i1y6gr8qrA=="],
 
-    "@rvncom/socketio-bun-engine": ["@rvncom/socketio-bun-engine@1.1.1", "", { "peerDependencies": { "typescript": "^5.9.2" } }, "sha512-ciLiC42ulfZvhLC2YON0DTYgOq7q7Yig37e7+Y7nJXd/e9+JqECwOxa5OWxgnN4gRA4H53PMUfbKfE/LSGIxIA=="],
+    "@rvncom/socketio-bun-engine": ["@rvncom/socketio-bun-engine@1.1.2", "", { "peerDependencies": { "typescript": "^5.9.2" } }, "sha512-fbpCXj8/JlKdG3uxij7qUY1zEfwugQD42paITnUKC2QFu6nSYWqhCdjXbx6DnuB94oYsaF8smS2pSHBm6HKOww=="],
 
     "@socket.io/component-emitter": ["@socket.io/component-emitter@3.1.2", "", {}, "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="],
 

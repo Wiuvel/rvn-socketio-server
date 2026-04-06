@@ -58,6 +58,7 @@ GET /health
 | `POST /broadcast/support/ticket-assigned` | Ticket assignment |
 | `POST /broadcast/support/message-read` | Messages marked as read |
 | `POST /broadcast/profile/comment` | New profile comment |
+| `POST /broadcast/notification` | User notification (targeted to `user:{userId}` room) |
 | `POST /broadcast/system` | System notification (zero-copy broadcast) |
 
 ### Socket.IO Events
@@ -75,4 +76,10 @@ GET /health
 - `support:message:read` — messages read
 - `support:error` — error notification
 - `profile:comment:new` — new profile comment
+- `notification:new` — user notification (targeted to `user:{userId}` room)
 - `system:notification` — system notification
+
+**Rooms:**
+- `user:{userId}` — personal room, auto-joined on connection (notifications)
+- `ticket:{ticketId}` — support ticket room (access-controlled)
+- `profile:{profileId}` — profile comments room

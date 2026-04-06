@@ -138,6 +138,11 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
   console.log(`[ws] Connected: ${socket.id} (user: ${socket.data.userId})`);
 
+  /* Auto-join personal room for targeted notifications */
+  if (socket.data.userId) {
+    socket.join(`user:${socket.data.userId}`);
+  }
+
   registerSupportHandlers(socket);
   registerProfileHandlers(socket);
 

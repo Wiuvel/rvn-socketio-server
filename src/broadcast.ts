@@ -17,15 +17,16 @@ import type {
   BroadcastTicketAssignedPayload,
   BroadcastMessageReadPayload,
   BroadcastCommentPayload,
+  BroadcastNotificationPayload,
   BroadcastSystemPayload,
 } from './types';
 
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || '';
 
-/** Maximum request body size in bytes. */
+/* Maximum request body size in bytes */
 const MAX_BODY_SIZE = 1_048_576; // 1 MB
 
-/** Returns a 401 Unauthorized response. */
+/* Returns a 401 Unauthorized response */
 function unauthorized(): Response {
   return new Response(JSON.stringify({ error: 'Unauthorized' }), {
     status: 401,
@@ -33,7 +34,7 @@ function unauthorized(): Response {
   });
 }
 
-/** Returns a 200 OK response with `{ ok: true }`. */
+/* Returns a 200 OK response with `{ ok: true }`. */
 function ok(): Response {
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
@@ -41,7 +42,7 @@ function ok(): Response {
   });
 }
 
-/** Returns a 400 Bad Request response with the given error message. */
+/* Returns a 400 Bad Request response with the given error message */
 function badRequest(msg: string): Response {
   return new Response(JSON.stringify({ error: msg }), {
     status: 400,
@@ -60,6 +61,7 @@ function badRequest(msg: string): Response {
  * - `POST /broadcast/support/ticket-assigned` — ticket assignment change
  * - `POST /broadcast/support/message-read` — message read receipts
  * - `POST /broadcast/profile/comment` — new profile comment
+ * - `POST /broadcast/notification` — user notification (targeted to user room)
  * - `POST /broadcast/system` — system-wide notification (zero-copy broadcast)
  *
  * @param req      - Incoming HTTP request
@@ -78,7 +80,7 @@ export async function handleBroadcastRequest(
     return unauthorized();
   }
 
-  // Body size limit — uses !(<=) to reject NaN from malformed headers
+  /* Body size limit — uses !(<=) to reject NaN from malformed headers */
   const contentLength = req.headers.get('content-length');
   if (contentLength) {
     const length = parseInt(contentLength, 10);
@@ -130,12 +132,19 @@ export async function handleBroadcastRequest(
       return ok();
     }
 
+    case '/broadcast/notification': {
+      const data = body as BroadcastNotificationPayload;
+      if (!data.userId || !data.notification) return badRequest('Missing userId or notification');
+      io.to(`user:${data.userId}`).emit('notification:new', { notification: data.notification });
+      return ok();
+    }
+
     case '/broadcast/system': {
       const data = body as BroadcastSystemPayload;
       if (!data.message) return badRequest('Missing message');
-      // Zero-copy broadcast via Engine.IO:
-      // "2" is the Socket.IO EVENT packet type, engine prepends "4" (message).
-      // Final wire frame: '42["system:notification",{...}]'
+      /* Zero-copy broadcast via Engine.IO */
+      /* "2" is the Socket.IO EVENT packet type, engine prepends "4" (message) */
+      /* Final wire frame: '42["system:notification",{...}]' */
       const packet = '2' + JSON.stringify(['system:notification', data]);
       engine.broadcast(packet);
       return ok();
