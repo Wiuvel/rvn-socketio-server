@@ -172,15 +172,9 @@ export default {
     const url = new URL(req.url);
 
     if (req.method === 'GET' && url.pathname === '/health') {
-      return new Response(
-        JSON.stringify({
-          status: 'ok',
-          connections: engine.clientsCount,
-          degraded: engine.degraded,
-          metrics: engine.metrics,
-        }),
-        { headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify(engine.healthCheck()), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     if (req.method === 'POST' && url.pathname.startsWith('/broadcast/')) {
